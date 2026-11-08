@@ -1,0 +1,10 @@
+# Backend runtime dependencies
+fastapi
+uvicorn[standard]
+itsdangerous
+psycopg[binary]
+python-multipart
+
+# Backend test dependencies
+httpx
+pytest
