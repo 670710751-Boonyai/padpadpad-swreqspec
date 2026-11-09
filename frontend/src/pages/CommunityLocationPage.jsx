@@ -1,0 +1,98 @@
+import React, { useState } from 'react';
+import { communityClient } from '../api/communityClient.js';
+
+// UC-01 FR-01-01..05, AF-01-01, AC-01, QR-02; server enforces C-01.
+const EMPTY = {
+  community_name: '', caretaker_name: '', caretaker_title: '',
+  contact_phone: '', local_rules: '',
+};
+
+export default function CommunityLocationPage({ client = communityClient }) {
+  const [locationId, setLocationId] = useState('');
+  const [records, setRecords] = useState([]);
+  const [fields, setFields] = useState(EMPTY);
+  const [editingId, setEditingId] = useState('');
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function load(event) {
+    event?.preventDefault();
+    setError(''); setMessage('');
+    if (!locationId.trim()) return setError('กรุณาระบุสถานที่ค่าย');
+    setBusy(true);
+    try {
+      setRecords(await client.list(locationId.trim()));
+    } catch (cause) {
+      setError(cause.message);
+    } finally { setBusy(false); }
+  }
+
+  async function submit(event) {
+    event.preventDefault(); setError(''); setMessage('');
+    if (!locationId.trim() || !fields.community_name.trim()
+        || !fields.caretaker_name.trim() || !fields.contact_phone.trim()) {
+      return setError('กรุณากรอกสถานที่ค่าย ชื่อชุมชน ชื่อผู้ดูแล และเบอร์ติดต่อ');
+    }
+    setBusy(true);
+    try {
+      if (editingId) {
+        await client.update(editingId, fields);
+      } else {
+        await client.create({ ...fields, location_id: locationId.trim() });
+      }
+      setMessage('บันทึกข้อมูลชุมชนสำเร็จ');
+      setRecords(await client.list(locationId.trim()));
+      setEditingId(''); setFields(EMPTY);
+    } catch (cause) {
+      setError(cause.message);
+    } finally { setBusy(false); }
+  }
+
+  function edit(row) {
+    setEditingId(row.community_id);
+    setFields(Object.fromEntries(Object.keys(EMPTY).map(key => [key, row[key] ?? ''])));
+    setMessage(''); setError('');
+  }
+
+  return (
+    <main style={{ maxWidth: 760, margin: '2rem auto', padding: '1rem' }}>
+      <h1>จัดการข้อมูลสถานที่และชุมชน</h1>
+      <form onSubmit={load}>
+        <label htmlFor="uc01-location">รหัสสถานที่ค่ายที่รับผิดชอบ</label>
+        <input id="uc01-location" value={locationId}
+          onChange={event => setLocationId(event.target.value)} required />
+        <button type="submit" disabled={busy}>แสดงข้อมูลชุมชน</button>
+      </form>
+      <form onSubmit={submit}>
+        <h2>{editingId ? 'แก้ไขข้อมูลชุมชน' : 'บันทึกข้อมูลชุมชน'}</h2>
+        {[
+          ['community_name', 'ชื่อชุมชน', true],
+          ['caretaker_name', 'ชื่อผู้ดูแล', true],
+          ['caretaker_title', 'ตำแหน่งผู้ดูแล', false],
+          ['contact_phone', 'เบอร์โทรศัพท์ติดต่อ', true],
+        ].map(([key, label, required]) => (
+          <div key={key}>
+            <label htmlFor={key}>{label}</label>
+            <input id={key} value={fields[key]} required={required}
+              onChange={event => setFields({ ...fields, [key]: event.target.value })} />
+          </div>
+        ))}
+        <label htmlFor="local_rules">ข้อปฏิบัติชุมชน</label>
+        <textarea id="local_rules" value={fields.local_rules}
+          onChange={event => setFields({ ...fields, local_rules: event.target.value })} />
+        <button type="submit" disabled={busy}>{editingId ? 'บันทึกการแก้ไข' : 'บันทึกข้อมูล'}</button>
+        {editingId && <button type="button" onClick={() => { setEditingId(''); setFields(EMPTY); }}>ยกเลิก</button>}
+      </form>
+      {error && <p role="alert">{error}</p>}
+      {message && <p role="status">{message}</p>}
+      <h2>รายการชุมชนของสถานที่นี้</h2>
+      <ul>{records.map(row => (
+        <li key={row.community_id}>
+          {row.community_name} — {row.caretaker_name} ({row.contact_phone})
+          <button type="button" onClick={() => edit(row)}>แก้ไข</button>
+        </li>
+      ))}</ul>
+    </main>
+  );
+}
