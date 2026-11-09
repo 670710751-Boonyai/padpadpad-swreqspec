@@ -1,24 +1,15 @@
-"""Helpers for session-based applicant identity in the camp enrollment flow."""
+"""Authentication dependency boundary for UC-14."""
 
 from fastapi import HTTPException, Request, status
 
 
-def bind_session_user(request: Request, user_id: str) -> None:
-    """Bind an identity supplied by trusted authentication code to the session."""
-    request.state.user_id = user_id
-    session = getattr(request, "session", None)
-    if session is not None:
-        session["user_id"] = user_id
+def get_current_student_id(request: Request) -> str:
+    """Read the trusted authenticated identity and fail closed (CON-SEC-01)."""
 
-
-def get_current_user_id(request: Request) -> str:
-    """Get applicant identity only from the verified session cookie (CON-ENR-02, NFR-SEC-01)."""
-    session = request.scope.get("session")
-    session_user = session.get("user_id") if isinstance(session, dict) else None
-    if isinstance(session_user, str) and session_user.strip():
-        return session_user
-
-    raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Authentication required for camp enrollment actions.",
-    )
+    student_id = getattr(request.state, "student_id", None)
+    if not isinstance(student_id, str) or not student_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+        )
+    return student_id
