@@ -1,0 +1,41 @@
+name: Verify UC-01 and UC-07 prototype
+on:
+  push:
+    branches:
+      - feature/751-uc01-uc07-combined
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend-feature-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install API test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+      - name: Execute only UC-01 and UC-07 tests
+        run: python -m pytest -v backend/tests/test_AC_01.py backend/tests/test_AC_07.py
+
+  frontend-prototype-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install packages
+        run: npm ci
+      - name: Build React/Vite frontend
+        run: npm run build
