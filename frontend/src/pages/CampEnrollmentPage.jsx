@@ -35,7 +35,7 @@ function assertCampRequirements(camp) {
 }
 
 // รองรับ: FR-ENR-01, FR-ENR-02, FR-ENR-03, FR-ENR-04, FR-ENR-06, FR-ENR-07, CON-ENR-01, CON-ENR-02, NFR-USE-01, NFR-SEC-01
-export default function CampEnrollmentPage({ client = apiClient }) {
+export default function CampEnrollmentPage({ client = apiClient, onSubmitted }) {
   const [camp, setCamp] = useState(null);
   const [formData, setFormData] = useState({});
   const [isLoading, setIsLoading] = useState(true);
@@ -137,7 +137,16 @@ export default function CampEnrollmentPage({ client = apiClient }) {
     setNotice('');
 
     try {
-      await client.submitApplication();
+      await client.saveDraft(formData);
+      const response = await client.submitApplication();
+      const application = await response.json();
+      if (typeof application.application_id !== 'string' || !application.application_id.trim()) {
+        throw new Error('ส่งใบสมัครแล้ว แต่ระบบไม่ได้ส่งรหัสใบสมัครกลับมา');
+      }
+      if (onSubmitted) {
+        onSubmitted(application.application_id);
+        return;
+      }
       setIsSubmitted(true);
       setNotice('รอตรวจสอบ');
     } catch (error) {

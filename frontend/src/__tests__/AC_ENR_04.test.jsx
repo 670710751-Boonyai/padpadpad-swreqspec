@@ -38,7 +38,9 @@ describe('test_AC_ENR_04_submit_ui', () => {
       ),
       getDraft: vi.fn().mockResolvedValue(jsonResponse({ form_data: {} })),
       saveDraft: vi.fn(),
-      submitApplication: vi.fn().mockResolvedValue(jsonResponse({ status: 'submitted' }, 201)),
+      submitApplication: vi.fn().mockResolvedValue(jsonResponse({
+        application_id: 'application-001', status: 'submitted',
+      }, 201)),
     };
 
     render(<CampEnrollmentPage client={client} />);
@@ -67,6 +69,15 @@ describe('test_AC_ENR_04_submit_ui', () => {
 
     expect(await screen.findByText('รอตรวจสอบ')).toBeTruthy();
     expect(client.submitApplication).toHaveBeenCalledOnce();
+    expect(client.saveDraft).toHaveBeenCalledWith({
+      full_name: 'ผู้สมัคร ตัวอย่าง',
+      nickname: 'น้อง',
+      student_id: '66000001',
+      year_level: '1',
+      phone_number: '0800000000',
+      contact_channel: 'line-id',
+      food_allergy: 'no',
+    });
     expect(screen.queryByRole('button', { name: 'ยืนยันส่งใบสมัคร' })).toBeNull();
   });
 
@@ -80,5 +91,23 @@ describe('test_AC_ENR_04_submit_ui', () => {
       credentials: 'include',
       method: 'POST',
     });
+  });
+
+  it('reports an invalid Submit response instead of claiming success', async () => {
+    const client = {
+      getConfiguredCamp: vi.fn().mockResolvedValue(jsonResponse({
+        name: 'ค่ายตัวอย่าง', required_fields: ['full_name'],
+      })),
+      getDraft: vi.fn().mockResolvedValue(jsonResponse({}, 404)),
+      saveDraft: vi.fn().mockResolvedValue(jsonResponse({})),
+      submitApplication: vi.fn().mockResolvedValue(jsonResponse({ status: 'submitted' }, 201)),
+    };
+    const onSubmitted = vi.fn();
+    render(<CampEnrollmentPage client={client} onSubmitted={onSubmitted} />);
+    await screen.findByLabelText('ชื่อ-นามสกุล');
+    fireEvent.click(screen.getByRole('button', { name: 'ยืนยันส่งใบสมัคร' }));
+    expect(await screen.findByText('ส่งใบสมัครแล้ว แต่ระบบไม่ได้ส่งรหัสใบสมัครกลับมา')).toBeTruthy();
+    expect(onSubmitted).not.toHaveBeenCalled();
+    expect(screen.queryByText('รอตรวจสอบ')).toBeNull();
   });
 });

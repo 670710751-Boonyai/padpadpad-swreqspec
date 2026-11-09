@@ -49,7 +49,9 @@ describe('test_AC_ENR_03_food_allergy_validation', () => {
       submitApplication: vi
         .fn()
         .mockRejectedValueOnce(validationError)
-        .mockResolvedValueOnce(jsonResponse({ status: 'submitted' }, 201)),
+        .mockResolvedValueOnce(jsonResponse({
+          application_id: 'application-001', status: 'submitted',
+        }, 201)),
     };
 
     render(<CampEnrollmentPage client={client} />);

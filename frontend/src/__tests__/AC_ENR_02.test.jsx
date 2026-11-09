@@ -46,6 +46,7 @@ describe('test_AC_ENR_02_form_error_ui', () => {
           form_data: { full_name: 'Applicant One' },
         }),
       )
+      .mockResolvedValueOnce(jsonResponse({ draft_id: 'draft-001' }))
       .mockResolvedValueOnce(
         jsonResponse(
           {
@@ -86,8 +87,11 @@ describe('test_AC_ENR_02_form_error_ui', () => {
     expect(studentId.getAttribute('aria-invalid')).toBe('false');
     fireEvent.click(screen.getByRole('button', { name: 'บันทึก Draft' }));
 
-    await waitFor(() => expect(fetchImpl).toHaveBeenCalledTimes(5));
-    const saveRequest = fetchImpl.mock.calls[3][1];
+    await waitFor(() => expect(fetchImpl).toHaveBeenCalledTimes(6));
+    const saveRequest = fetchImpl.mock.calls[4][1];
+    expect(JSON.parse(fetchImpl.mock.calls[2][1].body)).toEqual({
+      form_data: { full_name: 'Applicant One' },
+    });
     expect(JSON.parse(saveRequest.body)).toEqual({ form_data: {
       full_name: 'Applicant One',
       student_id: '1001',

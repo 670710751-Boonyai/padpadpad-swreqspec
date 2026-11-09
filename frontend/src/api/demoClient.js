@@ -117,8 +117,22 @@ function hasText(value) {
 }
 
 // รองรับ: FR-ENR-01, FR-ENR-02, FR-ENR-03, FR-ENR-04, FR-ENR-05, FR-ENR-06, FR-ENR-07
-export function createDemoApiClient({ onSubmitted = () => {} } = {}) {
+export function createDemoApiClient({ storage } = {}) {
   const state = createDemoState();
+  const storageKey = 'camp-enrollment-demo-application';
+
+  function getSavedApplication() {
+    if (state.application || !storage) return state.application;
+    const saved = storage.getItem(storageKey);
+    if (!saved) return null;
+    const application = JSON.parse(saved);
+    if (!application || typeof application.application_id !== 'string'
+        || application.status !== 'submitted' || !application.form_data
+        || typeof application.form_data !== 'object' || Array.isArray(application.form_data)) {
+      throw new Error('ข้อมูลใบสมัคร Demo ที่บันทึกไว้ไม่ถูกต้อง');
+    }
+    return application;
+  }
 
   return {
     getConfiguredCamp() {
@@ -141,7 +155,7 @@ export function createDemoApiClient({ onSubmitted = () => {} } = {}) {
     },
 
     async saveDraft(formData) {
-      if (state.application) {
+      if (getSavedApplication()) {
         throwDemoError(409, 'A submitted application already exists for this camp.');
       }
       const fieldErrors = validateFormFieldNames(formData);
@@ -161,7 +175,7 @@ export function createDemoApiClient({ onSubmitted = () => {} } = {}) {
     },
 
     async submitApplication() {
-      if (state.application) {
+      if (getSavedApplication()) {
         throwDemoError(409, 'An application has already been submitted for this camp.');
       }
       if (!state.draft) {
@@ -171,15 +185,16 @@ export function createDemoApiClient({ onSubmitted = () => {} } = {}) {
       const errors = validateForm(formData);
       if (errors.length > 0) throwValidationError(errors);
 
-      state.application = {
+      const application = {
         application_id: 'demo-application-001',
         camp_id: DEMO_CAMP.camp_id,
         form_data: { ...formData },
         status: 'submitted',
         submitted_at: currentTimestamp(),
       };
+      if (storage) storage.setItem(storageKey, JSON.stringify(application));
+      state.application = application;
       state.draft = null;
-      onSubmitted(state.application.application_id);
       return createResponse(
         {
           application_id: state.application.application_id,
@@ -191,13 +206,14 @@ export function createDemoApiClient({ onSubmitted = () => {} } = {}) {
       );
     },
 
-    getApplication(applicationId) {
-      if (!state.application || state.application.application_id !== applicationId) {
+    async getApplication(applicationId) {
+      const application = getSavedApplication();
+      if (!application || application.application_id !== applicationId) {
         const error = new Error('Demo application not found.');
         error.status = 404;
-        return Promise.reject(error);
+        throw error;
       }
-      return Promise.resolve(createResponse({ ...state.application }));
+      return createResponse({ ...application });
     },
   };
 }
