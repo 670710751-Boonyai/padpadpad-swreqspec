@@ -1,21 +1,19 @@
-# Verification Report — UC-01 (2026-11-09)
+# Verification Report — UC-01
 
-## Scope and result
+**GitHub Actions ที่รันจริง:** [Verify UC-01 and UC-07 prototype — run 42601274738](https://github.com/670710751-Boonyai/padpadpad-swreqspec/actions/runs/42601274738) (9 พฤศจิกายน 2026)
 
-- Reviewed current team `spec.md`, `plan.md`, `AGENTS.md`, existing FastAPI/React code.
-- Created isolated local Python/FastAPI/SQLite copy of the UC-01 service, API and AC test suite to execute tests without access to a full cloned repository.
-- Command: `python -m pytest -v backend/tests/test_AC_01.py`
-- Result: **8 passed, 0 failed** (local isolated copy, Python 3.13, pytest 9.0.2).
-- Compilation: `python -m compileall -q backend` in test workspace: success.
-- Full project `pytest -v`: **not run**. Frontend `npm test`: **not run**.
-- AC-01 success, AF-01-01 required fields and C-01 ownership/API denial passed under dependency overrides.
-- QR-01 2-second performance in deployed environment: **not measured**.
+## ผลที่ยืนยันด้วย CI บน Branch
+- `python -m pytest -v backend/tests/test_AC_01.py backend/tests/test_AC_07.py`: **16 passed, 1 warning, 0 failed**
+- UC-01: **8 test cases ผ่าน** (1 success, 4 required-field permutations, 1 cross-camp denial, 1 unauthenticated denial, 1 edit)
+- `npm ci && npm run build` บน `frontend/`: **สำเร็จ**
+- โปรเจกต์ฝั่งเว็บ now routes `/?feature=community-location` from `frontend/src/main.jsx`
+- `VITE_DEMO_MODE=true` is **labeled offline mock data** not authenticated / not production
 
-## Blockers before accepting or merging
-1. The existing Auth subsystem must inject `request.state.user_id` and `request.state.role` from trusted login; current API intentionally fails closed.
-2. Location assignments must be provisioned securely in `uc01_community_assignments` by the team.
-3. Team must decide Q-01-01 (phone/duplicate name) and Q-01-02 (attachments). No assumptions implemented.
-4. The existing frontend `App.jsx` already imports `apiClient` from `frontend/src/api/client.js` but that file did not expose a named `apiClient` export when inspected; the main app may require repair in a separate task.
-5. Merge/PR integration must compare with the group repository's latest code; no modifications have been made to the group repository.
+## ยังไม่ผ่านการ Verify ครบ
+- ยังไม่ได้รัน `pytest -v` ทั้ง Repo หรือ browser E2E
+- ยังไม่ได้เชื่อม trusted Authentication + camp assignment (UC-09)
+- ยังไม่ทดสอบ QR-01 (response ≤2 seconds) และ QR-02 usability กับผู้ใช้จริง
+- Q-01-01 phone/duplicate names และ Q-01-02 attachments ยังเปิดอยู่
+- ดูรายการข้อค้นพบใน `rtm.md`
 
-**Status:** Feature-scoped tests passed locally; end-to-end integration / whole-repo verify pending. Not a complete pass of `/verify`.
+**สถานะ:** Feature tests และ production Build ผ่านจริงบน CI; Integration และ SRS Final acceptance ยังไม่สมบูรณ์
