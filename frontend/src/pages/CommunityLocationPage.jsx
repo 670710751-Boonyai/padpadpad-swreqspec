@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { communityClient } from '../api/communityClient.js';
+import { prototypeIds } from '../api/ucPrototypeClients.js';
 
 // UC-01 FR-01-01..05, AF-01-01, AC-01, QR-02; server enforces C-01.
 const EMPTY = {
@@ -7,8 +8,8 @@ const EMPTY = {
   contact_phone: '', local_rules: '',
 };
 
-export default function CommunityLocationPage({ client = communityClient }) {
-  const [locationId, setLocationId] = useState('');
+export default function CommunityLocationPage({ client = communityClient, demo = false }) {
+  const [locationId, setLocationId] = useState(demo ? prototypeIds.locationId : '');
   const [records, setRecords] = useState([]);
   const [fields, setFields] = useState(EMPTY);
   const [editingId, setEditingId] = useState('');
@@ -56,8 +57,10 @@ export default function CommunityLocationPage({ client = communityClient }) {
   }
 
   return (
-    <main style={{ maxWidth: 760, margin: '2rem auto', padding: '1rem' }}>
+    <main className="uc-page">
+      <span className="uc-tag">UC-01 · Community Location</span>
       <h1>จัดการข้อมูลสถานที่และชุมชน</h1>
+      <p className="uc-helper">บันทึกข้อมูลชุมชน ผู้ดูแลพื้นที่ และข้อปฏิบัติของสถานที่ค่ายที่รับผิดชอบ</p>
       <form onSubmit={load}>
         <label htmlFor="uc01-location">รหัสสถานที่ค่ายที่รับผิดชอบ</label>
         <input id="uc01-location" value={locationId}

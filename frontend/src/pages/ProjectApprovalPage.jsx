@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { projectApprovalClient } from '../api/projectApprovalClient.js';
+import { prototypeIds } from '../api/ucPrototypeClients.js';
 
 // UC-07 AC-07, AF-07-01/02, C-01/02: actions are authorized by backend.
-export default function ProjectApprovalPage({ client = projectApprovalClient }) {
-  const [projectId, setProjectId] = useState('');
+export default function ProjectApprovalPage({ client = projectApprovalClient, demo = false }) {
+  const [projectId, setProjectId] = useState(demo ? prototypeIds.projectId : '');
   const [project, setProject] = useState(null);
   const [decision, setDecision] = useState('approved');
   const [feedback, setFeedback] = useState('');
@@ -45,8 +46,10 @@ export default function ProjectApprovalPage({ client = projectApprovalClient }) 
   }
 
   return (
-    <main style={{ maxWidth: 760, padding: '1rem', margin: '2rem auto' }}>
+    <main className="uc-page">
+      <span className="uc-tag">UC-07 · Project Approval</span>
       <h1>พิจารณาและอนุมัติโครงการค่าย</h1>
+      <p className="uc-helper">ดูสถานะคำขอ บันทึกผลการพิจารณา และตรวจสอบประวัติการอนุมัติโครงการ</p>
       <form onSubmit={load}>
         <label htmlFor="uc07-project">รหัสโครงการ</label>
         <input id="uc07-project" value={projectId} required

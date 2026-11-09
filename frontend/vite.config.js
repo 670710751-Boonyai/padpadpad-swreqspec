@@ -6,6 +6,10 @@ export default defineConfig(({ mode }) => {
   const proxy = VITE_DEMO_MODE === 'true'
     ? {}
     : {
+        '/api': {
+          target: 'http://localhost:8000',
+          changeOrigin: true,
+        },
         '/enrollment': {
           target: 'http://localhost:8000',
           changeOrigin: true,
