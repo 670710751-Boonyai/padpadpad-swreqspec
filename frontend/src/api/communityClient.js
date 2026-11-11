@@ -13,6 +13,9 @@ async function request(path, options = {}) {
 }
 
 export const communityClient = {
+  locations() {
+    return request('/api/locations/assigned');
+  },
   list(locationId) {
     return request(`/api/locations/${encodeURIComponent(locationId)}/communities`);
   },
