@@ -41,3 +41,27 @@ jobs:
         run: node --test src/__tests__/uc01_uc07_prototype.test.js
       - name: Build React/Vite frontend
         run: npm run build
+
+  # Diagnostic only: report compatibility with other features without changing
+  # classmates' code or claiming the entire integrated system is ready.
+  backend-repository-audit:
+    name: Full backend regression audit (non-gating)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install backend test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+      - name: Run entire backend test suite (diagnostic)
+        id: full_backend
+        continue-on-error: true
+        run: python -m pytest -v backend/tests
+      - name: Summarize diagnostic
+        if: always()
+        run: |
+          echo "Whole backend test suite outcome: ${{ steps.full_backend.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "This diagnostic is non-gating and does not replace feature-specific verification." >> "$GITHUB_STEP_SUMMARY"
