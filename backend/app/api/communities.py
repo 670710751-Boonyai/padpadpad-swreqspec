@@ -63,6 +63,15 @@ def create_community(
         raise permission_or_not_found(exc) from None
 
 
+@router.get("/api/locations/assigned")
+def get_assigned_locations(
+    user_id: str = Depends(get_committee_user_id),
+    service: CommunityService = Depends(get_community_service),
+):
+    """FR-01-02/C-01: return only locations assigned to this authenticated committee member."""
+    return service.list_assigned_locations(user_id)
+
+
 @router.get("/api/locations/{location_id}/communities")
 def get_communities(
     location_id: str,
