@@ -60,7 +60,9 @@ describe('UC-01 prototype: AC-01 / AF-01-01 / C-01', () => {
 describe('UC-07 prototype: AC-07 / AF-07-01 / AF-07-02 / C-02', () => {
   it('records approval history and an in-app notification', async () => {
     const client = createProjectApprovalPrototypeClient();
-    assert.equal((await client.status(prototypeIds.projectId)).status, 'not_submitted');
+    const startingState = await client.status(prototypeIds.projectId);
+    assert.equal(startingState.status, 'not_submitted');
+    assert.equal(startingState.viewer_role, 'demo');
     const submitted = await client.submit(prototypeIds.projectId);
     assert.equal(submitted.status, 'pending');
     assert.deepEqual(submitted.history.map(row => row.action), ['submitted']);
