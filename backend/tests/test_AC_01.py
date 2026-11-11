@@ -16,8 +16,11 @@ def setup_uc01(tmp_path):
     database = tmp_path / "uc01.sqlite3"
     with sqlite3.connect(database) as connection:
         connection.executescript("""
-        CREATE TABLE camp_locations (location_id TEXT PRIMARY KEY);
-        INSERT INTO camp_locations (location_id) VALUES ('camp-1'), ('camp-2');
+        CREATE TABLE camp_locations (
+            location_id TEXT PRIMARY KEY, location_name TEXT NOT NULL
+        );
+        INSERT INTO camp_locations (location_id, location_name)
+        VALUES ('camp-1', 'ค่ายหนึ่ง'), ('camp-2', 'ค่ายสอง');
         """)
     service = CommunityService(database)
     service.initialize()
@@ -41,6 +44,19 @@ def community_payload(location_id="camp-1"):
         "caretaker_name": "คุณสมชาย", "caretaker_title": "ผู้ดูแลพื้นที่",
         "contact_phone": "0812345678", "local_rules": "รักษาความสะอาด",
     }
+
+
+def test_AC_01_FR_01_02_lists_only_assigned_locations(setup_uc01):
+    # UI options must not reveal camps assigned to a different committee member.
+    client, _, app = setup_uc01
+    response = client.get("/api/locations/assigned")
+    assert response.status_code == 200
+    assert response.json() == [
+        {"location_id": "camp-1", "location_name": "ค่ายหนึ่ง"}
+    ]
+
+    app.dependency_overrides[get_committee_user_id] = lambda: "committee-2"
+    assert client.get("/api/locations/assigned").json() == []
 
 
 def test_AC_01_Given_When_Then_persists_community_linked_to_camp(setup_uc01):
@@ -94,6 +110,7 @@ def test_AC_01_C_01_unauthenticated_and_wrong_role_fail_closed(setup_uc01):
     client, _, app = setup_uc01
     app.dependency_overrides.pop(get_committee_user_id)
     assert client.post("/api/communities", json=community_payload()).status_code == 401
+    assert client.get("/api/locations/assigned").status_code == 401
 
 
 def test_AC_01_assigned_committee_can_edit_without_changing_location(setup_uc01):
