@@ -13,8 +13,20 @@ export default function ProjectApprovalPage({ client = projectApprovalClient, de
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
 
+  // Never show a previous project's details while the new project is loading.
+  function changeProject(event) {
+    setProjectId(event.target.value);
+    setProject(null);
+    setNotices([]);
+    setFeedback('');
+    setError('');
+    setMessage('');
+  }
+
   async function load(event) {
     event?.preventDefault();
+    setProject(null);
+    setNotices([]);
     if (!projectId.trim()) return setError('กรุณากรอกรหัสโครงการ');
     setBusy(true); setError(''); setMessage('');
     try {
@@ -41,6 +53,9 @@ export default function ProjectApprovalPage({ client = projectApprovalClient, de
     try {
       const response = await client.decide(projectId.trim(), decision, feedback);
       setProject(response); setMessage('บันทึกผลการพิจารณาสำเร็จ');
+      // In demo mode notifications update immediately. In real mode this endpoint
+      // is committee-only, so a faculty session cannot retrieve private notices.
+      try { setNotices(await client.notifications(projectId.trim())); } catch { setNotices([]); }
     } catch (cause) { setError(cause.message); }
     finally { setBusy(false); }
   }
@@ -53,7 +68,7 @@ export default function ProjectApprovalPage({ client = projectApprovalClient, de
       <form onSubmit={load}>
         <label htmlFor="uc07-project">รหัสโครงการ</label>
         <input id="uc07-project" value={projectId} required
-          onChange={event => setProjectId(event.target.value)} />
+          onChange={changeProject} disabled={busy} />
         <button disabled={busy}>ดูสถานะโครงการ</button>
       </form>
       {project && (
