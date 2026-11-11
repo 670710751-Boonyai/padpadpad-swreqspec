@@ -2,7 +2,7 @@ name: Verify UC-01 and UC-07 prototype
 on:
   push:
     branches:
-      - feature/751-uc01-uc07-combined
+      - 'feature/751-uc01-uc07-*'
   workflow_dispatch:
 
 permissions:
@@ -37,5 +37,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Install packages
         run: npm ci
+      - name: Run UC-01/UC-07 offline prototype contract tests
+        run: npm run test -- src/__tests__/uc01_uc07_prototype.test.js
       - name: Build React/Vite frontend
         run: npm run build
