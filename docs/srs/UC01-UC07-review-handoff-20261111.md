@@ -64,3 +64,20 @@ Demo Mode **ไม่มี Auth จริง ไม่บันทึก DB จ
 3. ทดลองหน้า Demo ด้วยคนจริง และทดสอบข้ามฟีเจอร์/สิทธิ์หลัง UC-09 พร้อม
 4. รวบรวม SRS และ Traceability Matrix ฉบับกลุ่ม; ไม่ยืนยันสถานะเพื่อนอีก 12 UC โดยดูแค่ index
 5. สร้าง Pull Request จาก Fork ไป Repo ทีม **เมื่อผู้รับผิดชอบพร้อมให้ Review** เท่านั้น; ไม่ Merge โดยพลการ
+
+## 6. ผลตรวจ Integration กับ Repo ทีม (11 พฤศจิกายน 2026)
+
+- Fork Branch ปัจจุบันและ `main` ของทีม **แยกประวัติกันแล้ว**: เมื่อเปรียบเทียบกับทีม ฝั่งงานเรามี commit เพิ่ม 33 และตามหลังทีม 11 commit (ค่านี้เปลี่ยนได้เมื่อทีม push ใหม่)
+- เมื่อเทียบ `main` ของทีมกับฐานของ Fork พบไฟล์ที่ **ทั้งสองฝั่งเปลี่ยนเหมือนกัน** 2 ไฟล์: `backend/app/main.py` และ `frontend/src/main.jsx` ต้องรวมอย่างระมัดระวังเพื่อไม่ให้ route/import ของฟีเจอร์เพื่อนหาย
+- **ห้าม** นำ `main.jsx` หรือ `backend/app/main.py` ของ Fork ไปเขียนทับไฟล์จาก Repo ทีมตรง ๆ โดยไม่เทียบ Diff
+- ยังไม่ได้ทำ rebase/merge ทีมเข้ามาใน Branch นี้ และยังไม่ได้เปิด PR
+
+### Full regression audit (ใช้เพื่อหาปัญหา ไม่ใช่ผลผ่าน)
+
+GitHub Actions [run 43026957350](https://github.com/670710751-Boonyai/padpadpad-swreqspec/actions/runs/43026957350):
+- Scoped UC-01/07 Backend: **18 passed**
+- Offline Prototype Node tests: **11 passed**
+- Vite Build: **success**
+- Whole-backend pytest: **8 collection errors** (ยังเริ่ม suite ได้ไม่ครบ) เนื่องจาก `psycopg` และ `itsdangerous` ไม่อยู่ใน environment นี้ และ `backend.app.middleware.auth` ไม่เปิดเผยฟังก์ชัน `bind_session_user` ที่ test UC อื่นคาดหวัง
+- งานตรวจ Full Suite ตั้ง `continue-on-error` โดยตั้งใจเพื่อไม่ให้การทดลองนี้บล็อก scoped CI; **Workflow สีเขียวไม่ได้หมายถึง Full Suite ผ่าน**
+- ห้ามแก้ requirements/บริการของเพื่อนแบบเดาเอง ให้ทีมเจ้าของฟีเจอร์แก้ Contract และ dependency ที่ตกลงร่วมกัน
