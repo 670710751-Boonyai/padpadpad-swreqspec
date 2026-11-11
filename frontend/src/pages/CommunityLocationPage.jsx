@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { communityClient } from '../api/communityClient.js';
 import { prototypeIds } from '../api/ucPrototypeClients.js';
 
@@ -16,6 +16,22 @@ export default function CommunityLocationPage({ client = communityClient, demo =
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [locations, setLocations] = useState([]);
+  const [loadingLocations, setLoadingLocations] = useState(true);
+
+  // FR-01-02 / C-01: the server exposes only locations assigned to this user.
+  useEffect(() => {
+    let active = true;
+    client.locations()
+      .then(rows => {
+        if (!active) return;
+        setLocations(rows);
+        if (!rows.length) setError('ยังไม่มีสถานที่ค่ายที่ได้รับมอบหมาย');
+      })
+      .catch(cause => { if (active) setError(cause.message); })
+      .finally(() => { if (active) setLoadingLocations(false); });
+    return () => { active = false; };
+  }, [client]);
 
   async function load(event) {
     event?.preventDefault();
@@ -73,10 +89,17 @@ export default function CommunityLocationPage({ client = communityClient, demo =
       <h1>จัดการข้อมูลสถานที่และชุมชน</h1>
       <p className="uc-helper">บันทึกข้อมูลชุมชน ผู้ดูแลพื้นที่ และข้อปฏิบัติของสถานที่ค่ายที่รับผิดชอบ</p>
       <form onSubmit={load}>
-        <label htmlFor="uc01-location">รหัสสถานที่ค่ายที่รับผิดชอบ</label>
-        <input id="uc01-location" value={locationId}
-          onChange={changeLocation} disabled={busy} required />
-        <button type="submit" disabled={busy}>แสดงข้อมูลชุมชน</button>
+        <label htmlFor="uc01-location">สถานที่ค่ายที่รับผิดชอบ</label>
+        <select id="uc01-location" value={locationId}
+          onChange={changeLocation} disabled={busy || loadingLocations} required>
+          <option value="">-- เลือกสถานที่ค่าย --</option>
+          {locations.map(row => (
+            <option key={row.location_id} value={row.location_id}>
+              {row.location_name} ({row.location_id})
+            </option>
+          ))}
+        </select>
+        <button type="submit" disabled={busy || loadingLocations || !locationId}>แสดงข้อมูลชุมชน</button>
       </form>
       <form onSubmit={submit}>
         <h2>{editingId ? 'แก้ไขข้อมูลชุมชน' : 'บันทึกข้อมูลชุมชน'}</h2>
@@ -95,7 +118,7 @@ export default function CommunityLocationPage({ client = communityClient, demo =
         <label htmlFor="local_rules">ข้อปฏิบัติชุมชน</label>
         <textarea id="local_rules" value={fields.local_rules}
           onChange={event => setFields({ ...fields, local_rules: event.target.value })} />
-        <button type="submit" disabled={busy}>{editingId ? 'บันทึกการแก้ไข' : 'บันทึกข้อมูล'}</button>
+        <button type="submit" disabled={busy || loadingLocations || !locationId}>{editingId ? 'บันทึกการแก้ไข' : 'บันทึกข้อมูล'}</button>
         {editingId && <button type="button" onClick={() => { setEditingId(''); setFields(EMPTY); }}>ยกเลิก</button>}
       </form>
       {error && <p role="alert">{error}</p>}
