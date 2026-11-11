@@ -145,3 +145,22 @@ def test_AC_07_unauthenticated_role_fails_closed(scenario):
     client, application, _ = scenario
     application.dependency_overrides.pop(get_actor)
     assert client.post("/api/projects/p-1/approval/submit").status_code == 401
+
+def test_AC_07_status_includes_trusted_viewer_role_for_ui_controls(scenario):
+    # The client does not select the identity or role. The server derives it
+    # from authenticated actor dependencies and validates project membership.
+    client, application, _ = scenario
+    committee_view = client.get("/api/projects/p-1/approval")
+    assert committee_view.status_code == 200
+    assert committee_view.json()["viewer_role"] == "committee"
+
+    set_actor(application, "advisor-1", "faculty")
+    faculty_view = client.get("/api/projects/p-1/approval")
+    assert faculty_view.status_code == 200
+    assert faculty_view.json()["viewer_role"] == "faculty"
+
+    set_actor(application, "advisor-2", "faculty")
+    assert client.get("/api/projects/p-1/approval").status_code == 403
+
+    application.dependency_overrides.pop(get_actor)
+    assert client.get("/api/projects/p-1/approval").status_code == 401
