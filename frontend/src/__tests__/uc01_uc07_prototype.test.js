@@ -11,6 +11,10 @@ import {
 describe('UC-01 prototype: AC-01 / AF-01-01 / C-01', () => {
   it('shows only the configured demo camp location', async () => {
     const client = createCommunityPrototypeClient();
+    const locations = await client.locations();
+    assert.deepEqual(locations, [
+      { location_id: prototypeIds.locationId, location_name: 'สถานที่ค่ายตัวอย่าง' },
+    ]);
     const rows = await client.list(prototypeIds.locationId);
     assert.equal(rows.length, 1);
     assert.equal(rows[0].location_id, prototypeIds.locationId);
