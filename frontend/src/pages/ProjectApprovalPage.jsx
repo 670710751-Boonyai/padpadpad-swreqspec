@@ -13,6 +13,9 @@ export default function ProjectApprovalPage({ client = projectApprovalClient, de
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
 
+  const maySubmit = project?.viewer_role === 'committee' || (demo && project?.viewer_role === 'demo');
+  const mayReview = project?.viewer_role === 'faculty' || (demo && project?.viewer_role === 'demo');
+
   // Never show a previous project's details while the new project is loading.
   function changeProject(event) {
     setProjectId(event.target.value);
@@ -30,9 +33,12 @@ export default function ProjectApprovalPage({ client = projectApprovalClient, de
     if (!projectId.trim()) return setError('กรุณากรอกรหัสโครงการ');
     setBusy(true); setError(''); setMessage('');
     try {
-      setProject(await client.status(projectId.trim()));
-      // Lecturer accounts cannot fetch committee-only notifications.
-      try { setNotices(await client.notifications(projectId.trim())); } catch { setNotices([]); }
+      const current = await client.status(projectId.trim());
+      setProject(current);
+      // Notifications are scoped to the signed-in committee. Faculty cannot read them.
+      if (current.viewer_role === 'committee' || (demo && current.viewer_role === 'demo')) {
+        try { setNotices(await client.notifications(projectId.trim())); } catch { setNotices([]); }
+      }
     } catch (cause) { setError(cause.message); }
     finally { setBusy(false); }
   }
@@ -42,7 +48,8 @@ export default function ProjectApprovalPage({ client = projectApprovalClient, de
     setBusy(true); setError(''); setMessage('');
     try {
       const response = await client.submit(projectId.trim());
-      setProject(response); setMessage('ส่งขออนุมัติโครงการสำเร็จ');
+      setProject({ ...response, viewer_role: project?.viewer_role });
+      setMessage('ส่งขออนุมัติโครงการสำเร็จ');
     } catch (cause) { setError(cause.message); }
     finally { setBusy(false); }
   }
@@ -52,10 +59,13 @@ export default function ProjectApprovalPage({ client = projectApprovalClient, de
     setBusy(true); setError(''); setMessage('');
     try {
       const response = await client.decide(projectId.trim(), decision, feedback);
-      setProject(response); setMessage('บันทึกผลการพิจารณาสำเร็จ');
-      // In demo mode notifications update immediately. In real mode this endpoint
-      // is committee-only, so a faculty session cannot retrieve private notices.
-      try { setNotices(await client.notifications(projectId.trim())); } catch { setNotices([]); }
+      setProject({ ...response, viewer_role: project?.viewer_role });
+      setMessage('บันทึกผลการพิจารณาสำเร็จ');
+      // The demo simulates both roles. Production advisers cannot read
+      // committee-only notifications, so the UI never requests them.
+      if (demo) {
+        try { setNotices(await client.notifications(projectId.trim())); } catch { setNotices([]); }
+      }
     } catch (cause) { setError(cause.message); }
     finally { setBusy(false); }
   }
@@ -75,13 +85,17 @@ export default function ProjectApprovalPage({ client = projectApprovalClient, de
         <section>
           <h2>{project.project_name}</h2>
           <p>สถานะล่าสุด: <strong>{project.status}</strong></p>
-          <form onSubmit={submit}>
+          <p className="uc-helper" role="note">
+            ขณะนี้แสดงข้อมูลชื่อ สถานะ และประวัติการพิจารณาเท่านั้น
+            เอกสารรายละเอียดโครงการฉบับเต็มยังไม่เชื่อมกับระบบ ต้องให้ทีมยืนยันแหล่งเอกสารก่อนใช้ตรวจอนุมัติจริง
+          </p>
+          {maySubmit && <form onSubmit={submit}>
             <button disabled={busy || !['not_submitted', 'revision'].includes(project.status)}>
               ส่งขออนุมัติ / ส่งอีกครั้งหลังแก้ไข
             </button>
-          </form>
-          <form onSubmit={review}>
-            <h3>สำหรับอาจารย์ที่ปรึกษา</h3>
+          </form>}
+          {mayReview && <form onSubmit={review}>
+            <h3>สำหรับอาจารย์ที่ปรึกษา{demo ? ' (จำลอง)' : ''}</h3>
             <label htmlFor="uc07-decision">ผลการพิจารณา</label>
             <select id="uc07-decision" value={decision}
               onChange={event => setDecision(event.target.value)}>
@@ -94,13 +108,18 @@ export default function ProjectApprovalPage({ client = projectApprovalClient, de
               onChange={event => setFeedback(event.target.value)}
               required={decision !== 'approved'} />
             <button disabled={busy || project.status !== 'pending'}>บันทึกผล</button>
-          </form>
+          </form>}
+          {!maySubmit && !mayReview && <p role="note">บัญชีนี้ไม่มีสิทธิ์ส่งหรือพิจารณาโครงการ</p>}
           <h3>ประวัติการพิจารณา</h3>
           <ul>{project.history.map(item => (
             <li key={item.history_id}>{item.action}: {item.feedback || '—'} ({item.occurred_at})</li>
           ))}</ul>
-          <h3>การแจ้งเตือนถึงคณะกรรมการ</h3>
-          <ul>{notices.map(item => <li key={item.notification_id}>{item.status}: {item.message}</li>)}</ul>
+          {(project.viewer_role === 'committee' || (demo && project.viewer_role === 'demo')) && (
+            <>
+              <h3>การแจ้งเตือนถึงคณะกรรมการ</h3>
+              <ul>{notices.map(item => <li key={item.notification_id}>{item.status}: {item.message}</li>)}</ul>
+            </>
+          )}
         </section>
       )}
       {error && <p role="alert">{error}</p>}
