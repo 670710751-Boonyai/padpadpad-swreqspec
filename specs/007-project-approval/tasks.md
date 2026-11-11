@@ -1,7 +1,7 @@
 # Tasks: UC-07 พิจารณาและอนุมัติโครงการ
 
 อ้างอิง: [spec.md](./spec.md) (Draft v2), [plan.md](./plan.md)
-สถานะ: Draft v1 — ยังไม่ Implement; ต้องแก้ความขัดแย้งใน Spec และเลือก Stack ร่วมกับทีม
+สถานะ: Draft v1 — มี Prototype/API และ scoped CI tests ผ่านแล้วใน Fork; ยังมี Spec conflict, Integration และ full tests ที่ต้องให้ทีมตรวจ
 
 ## งานที่ทำได้ทันที (ไม่พึ่งพา Task อื่น)
 
@@ -46,3 +46,11 @@
 | QR-01 | T-03, T-05, T-06 |
 | QR-02 | T-02, T-06 |
 | FR-07-* | รอ T-01 ยืนยันชุด ID ก่อน Mapping |
+
+## ความคืบหน้าใน Fork (11 พ.ย. 2026 — ยังไม่ใช่การอนุมัติจากทีม)
+
+- T-02/T-03/T-04: มี status transitions, approval history แบบ immutable, notifications ในแอป และ API สำหรับส่ง/พิจารณาโครงการ
+- T-05: มีหน้า React สำหรับส่ง/พิจารณาและดูสถานะ; ปรับไม่ให้ข้อมูลโครงการก่อนหน้าค้าง และดึงรายการแจ้งเตือนใหม่หลังบันทึกผล แต่ยังไม่มีหน้าเอกสารโครงการฉบับเต็ม
+- T-06: CI [run 43025058889](https://github.com/670710751-Boonyai/padpadpad-swreqspec/actions/runs/43025058889) ทดสอบ Backend เฉพาะ UC-01/07 17 cases และ Offline Demo 11 cases ผ่าน พร้อม Build ผ่าน; **ยังไม่ได้เชื่อม UC-09 Auth จริง, full repo pytest หรือ browser E2E**
+- T-01 ยังเป็น **BLOCKER**: ID FR-07-01..05 ซ้ำความหมายต่างกันใน spec.md; ห้ามแก้หรือเลือกชุด ID เองก่อนทีมยืนยัน
+- คงรายการ checkbox เดิมไว้เพื่อรอคนตรวจ end-to-end ตามเกณฑ์ “เสร็จเมื่อ”; ดูช่องโหว่ใน [rtm.md](./rtm.md)
