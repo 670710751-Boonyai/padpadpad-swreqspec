@@ -58,6 +58,19 @@ class CommunityService:
         if allowed is None:
             raise PermissionError("ไม่มีสิทธิ์จัดการข้อมูลของสถานที่ค่ายนี้")
 
+    def list_assigned_locations(self, user_id):
+        """FR-01-02, C-01: expose only camp locations assigned to the signed-in committee member."""
+        with self.connect() as connection:
+            rows = connection.execute(
+                """SELECT l.location_id, l.location_name
+                   FROM uc01_community_assignments AS a
+                   JOIN camp_locations AS l ON l.location_id=a.location_id
+                   WHERE a.user_id=?
+                   ORDER BY l.location_name, l.location_id""",
+                (user_id,),
+            ).fetchall()
+            return [dict(row) for row in rows]
+
     @staticmethod
     def _record(connection, community_id):
         row = connection.execute(
