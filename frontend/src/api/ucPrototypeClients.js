@@ -67,6 +67,8 @@ export function createProjectApprovalPrototypeClient() {
     return {
       project_id: SAMPLE_PROJECT,
       project_name: 'โครงการค่ายอาสาพัฒนาชุมชน',
+      // Both roles are simulated in the explicitly labeled offline prototype only.
+      viewer_role: 'demo',
       status,
       history: history.map(row => ({ ...row })),
     };
