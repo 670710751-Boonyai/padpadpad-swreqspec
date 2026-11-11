@@ -56,3 +56,16 @@ npm run dev
 - ไม่เปิด Mock data ให้ดูเหมือนข้อมูลจริง
 - ไม่ Merge เข้า `ploysumlees-670710743/padpadpad-swreqspec` ก่อนทีมรีวิว
 - ไม่ถือว่าฟีเจอร์เพื่อนอีก 12 UC เสร็จ เพียงเพราะมีรายชื่อในดัชนี
+
+## 7. สถานะเพิ่มเติม ณ 11 พฤศจิกายน 2026 (Review Branch)
+
+- [x] UC-01 เลือกสถานที่ค่ายจากรายการที่กรองตาม assignment ของผู้ใช้แล้ว (ยังต้องเชื่อม UC-09 จริง)
+- [x] UC-07 หน้าเว็บใช้ `viewer_role` จาก authenticated status endpoint เพื่อแสดงการกระทำตามสิทธิ์; Demo Mode ระบุว่าเป็นการจำลอง
+- [x] มีเอกสารส่งต่อทีม `docs/srs/UC01-UC07-review-handoff-20261111.md`
+- [x] มีผล Scoped CI [run 43026957350](https://github.com/670710751-Boonyai/padpadpad-swreqspec/actions/runs/43026957350): Backend 18 ผ่าน, Offline Prototype 11 ผ่าน, Frontend Build ผ่าน
+- [ ] Full Backend Suite: พบ 8 test collection errors ใน diagnostic (missing dependency และ shared auth function); **ยังไม่ผ่าน**
+- [ ] รวม Branch ของงานเราเข้ากับ upstream ล่าสุดอย่างปลอดภัย: `backend/app/main.py` และ `frontend/src/main.jsx` มีการแก้ทั้งสองฝั่ง ห้ามทับไฟล์เพื่อน
+- [ ] ให้ทีมยืนยัน Spec conflict ของ UC-07 และแหล่งเอกสารโครงการฉบับเต็มก่อน Final
+- [ ] ทดสอบ Browser E2E/UC-09 Login จริง, UC-01 performance และรวม SRS/RTM ของทั้งทีม
+
+*ข้อสำคัญ:* ผ่าน Scoped CI ≠ ผ่านงานทั้งระบบ; ตัวเลขและสิทธิ์การ Merge เปลี่ยนได้เมื่อทีมอัปเดต Repo
