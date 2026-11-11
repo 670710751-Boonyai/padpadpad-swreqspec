@@ -78,7 +78,10 @@ def get_approval_status(
 ):
     """FR-07-05: latest project status and append-only decision history."""
     try:
-        return service.get_status(project_id, actor[0], actor[1])
+        result = service.get_status(project_id, actor[0], actor[1])
+        # The viewer's role is derived from trusted server authentication, never
+        # supplied by the client. The UI may hide actions; API still enforces them.
+        return {**result, "viewer_role": actor[1]}
     except (ApprovalForbiddenError, LookupError) as exc:
         raise _translate_error(exc) from None
 
