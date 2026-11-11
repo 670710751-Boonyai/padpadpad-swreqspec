@@ -1,22 +1,23 @@
-import { describe, expect, it } from 'vitest';
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
+
 import {
   createCommunityPrototypeClient,
   createProjectApprovalPrototypeClient,
   prototypeIds,
 } from '../api/ucPrototypeClients.js';
 
-// These are DEMO contract tests. They intentionally do not claim to verify
-// UC-09 authentication, database persistence, or production API integration.
-describe('UC-01 community-location prototype (AC-01, AF-01-01, C-01)', () => {
-  it('loads only the explicitly configured sample location', async () => {
+// Offline DEMO contract only: not evidence of authentication or DB persistence.
+describe('UC-01 prototype: AC-01 / AF-01-01 / C-01', () => {
+  it('shows only the configured demo camp location', async () => {
     const client = createCommunityPrototypeClient();
     const rows = await client.list(prototypeIds.locationId);
-    expect(rows).toHaveLength(1);
-    expect(rows[0].location_id).toBe(prototypeIds.locationId);
-    await expect(client.list('another-camp')).rejects.toThrow('ข้อมูลจำลอง');
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].location_id, prototypeIds.locationId);
+    await assert.rejects(client.list('another-camp'), /ข้อมูลจำลอง/);
   });
 
-  it('creates and edits a community while retaining its original location', async () => {
+  it('saves and edits community data without moving a record to a different camp', async () => {
     const client = createCommunityPrototypeClient();
     const fields = {
       location_id: prototypeIds.locationId,
@@ -27,21 +28,17 @@ describe('UC-01 community-location prototype (AC-01, AF-01-01, C-01)', () => {
       local_rules: 'รักษาความสะอาด',
     };
     const created = await client.create(fields);
-    expect(created).toMatchObject(fields);
-
+    for (const [key, value] of Object.entries(fields)) assert.equal(created[key], value);
     const changed = await client.update(created.community_id, {
-      ...fields,
-      location_id: 'another-camp',
-      community_name: 'ชุมชนที่แก้ไข',
+      ...fields, location_id: 'another-camp', community_name: 'ชุมชนที่แก้ไข',
     });
-    expect(changed.community_name).toBe('ชุมชนที่แก้ไข');
-    expect(changed.location_id).toBe(prototypeIds.locationId);
-    expect(await client.list(prototypeIds.locationId)).toHaveLength(2);
+    assert.equal(changed.community_name, 'ชุมชนที่แก้ไข');
+    assert.equal(changed.location_id, prototypeIds.locationId);
+    assert.equal((await client.list(prototypeIds.locationId)).length, 2);
   });
 
-  it.each(['community_name', 'caretaker_name', 'contact_phone'])(
-    'rejects blank required field %s without saving (AF-01-01)',
-    async (field) => {
+  for (const field of ['community_name', 'caretaker_name', 'contact_phone']) {
+    it('rejects blank required field ' + field + ' without saving', async () => {
       const client = createCommunityPrototypeClient();
       const fields = {
         location_id: prototypeIds.locationId,
@@ -50,66 +47,62 @@ describe('UC-01 community-location prototype (AC-01, AF-01-01, C-01)', () => {
         contact_phone: '0811111111',
         [field]: '  ',
       };
-      await expect(client.create(fields)).rejects.toThrow('กรุณาระบุ');
-      expect(await client.list(prototypeIds.locationId)).toHaveLength(1);
-    },
-  );
+      await assert.rejects(client.create(fields), /กรุณาระบุ/);
+      assert.equal((await client.list(prototypeIds.locationId)).length, 1);
+    });
+  }
 });
 
-describe('UC-07 project-approval prototype (AC-07, AF-07-01/02, C-02)', () => {
-  it('starts unsubmitted and records an approved decision with a notification', async () => {
+describe('UC-07 prototype: AC-07 / AF-07-01 / AF-07-02 / C-02', () => {
+  it('records approval history and an in-app notification', async () => {
     const client = createProjectApprovalPrototypeClient();
-    expect((await client.status(prototypeIds.projectId)).status).toBe('not_submitted');
-
+    assert.equal((await client.status(prototypeIds.projectId)).status, 'not_submitted');
     const submitted = await client.submit(prototypeIds.projectId);
-    expect(submitted.status).toBe('pending');
-    expect(submitted.history.map(row => row.action)).toEqual(['submitted']);
-
+    assert.equal(submitted.status, 'pending');
+    assert.deepEqual(submitted.history.map(row => row.action), ['submitted']);
     const approved = await client.decide(prototypeIds.projectId, 'approved', '');
-    expect(approved.status).toBe('approved');
-    expect(approved.history.map(row => row.action)).toEqual(['submitted', 'approved']);
-
+    assert.equal(approved.status, 'approved');
+    assert.deepEqual(approved.history.map(row => row.action), ['submitted', 'approved']);
     const notices = await client.notifications(prototypeIds.projectId);
-    expect(notices).toHaveLength(1);
-    expect(notices[0].status).toBe('approved');
-    await expect(client.submit(prototypeIds.projectId)).rejects.toThrow();
+    assert.equal(notices.length, 1);
+    assert.equal(notices[0].status, 'approved');
+    await assert.rejects(client.submit(prototypeIds.projectId));
   });
 
-  it.each(['rejected', 'revision'])(
-    'requires a reason before %s without mutating the pending status',
-    async (decision) => {
+  for (const decision of ['rejected', 'revision']) {
+    it('requires a reason for ' + decision + ' without modifying pending status', async () => {
       const client = createProjectApprovalPrototypeClient();
       await client.submit(prototypeIds.projectId);
-      await expect(client.decide(prototypeIds.projectId, decision, '  ')).rejects.toThrow('เหตุผล');
-      expect((await client.status(prototypeIds.projectId)).status).toBe('pending');
-      expect(await client.notifications(prototypeIds.projectId)).toHaveLength(0);
-    },
-  );
+      await assert.rejects(client.decide(prototypeIds.projectId, decision, '  '), /เหตุผล/);
+      assert.equal((await client.status(prototypeIds.projectId)).status, 'pending');
+      assert.equal((await client.notifications(prototypeIds.projectId)).length, 0);
+    });
+  }
 
-  it('allows resubmission after revision and preserves the decision history', async () => {
+  it('allows resubmission after revision and keeps all previous decisions', async () => {
     const client = createProjectApprovalPrototypeClient();
     await client.submit(prototypeIds.projectId);
     await client.decide(prototypeIds.projectId, 'revision', 'กรุณาปรับเอกสาร');
-    expect((await client.status(prototypeIds.projectId)).status).toBe('revision');
+    assert.equal((await client.status(prototypeIds.projectId)).status, 'revision');
     await client.submit(prototypeIds.projectId);
-    const result = await client.decide(prototypeIds.projectId, 'approved', 'ปรับแล้ว');
-    expect(result.history.map(row => row.action)).toEqual([
+    const approved = await client.decide(prototypeIds.projectId, 'approved', 'ปรับแล้ว');
+    assert.deepEqual(approved.history.map(row => row.action), [
       'submitted', 'revision', 'submitted', 'approved',
     ]);
-    expect(await client.notifications(prototypeIds.projectId)).toHaveLength(2);
+    assert.equal((await client.notifications(prototypeIds.projectId)).length, 2);
   });
 
-  it('does not allow another submission after rejection (AF-07-02)', async () => {
+  it('rejects resubmission after final rejection', async () => {
     const client = createProjectApprovalPrototypeClient();
     await client.submit(prototypeIds.projectId);
     await client.decide(prototypeIds.projectId, 'rejected', 'ไม่ผ่านเงื่อนไข');
-    await expect(client.submit(prototypeIds.projectId)).rejects.toThrow();
+    await assert.rejects(client.submit(prototypeIds.projectId));
   });
 
-  it('rejects unknown project IDs and decisions', async () => {
+  it('rejects unknown projects and decisions', async () => {
     const client = createProjectApprovalPrototypeClient();
-    await expect(client.status('other-project')).rejects.toThrow('ข้อมูลจำลอง');
+    await assert.rejects(client.status('other-project'), /ข้อมูลจำลอง/);
     await client.submit(prototypeIds.projectId);
-    await expect(client.decide(prototypeIds.projectId, 'unknown', '')).rejects.toThrow('ผลพิจารณา');
+    await assert.rejects(client.decide(prototypeIds.projectId, 'unknown', ''), /ผลพิจารณา/);
   });
 });
