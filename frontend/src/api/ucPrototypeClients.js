@@ -29,6 +29,9 @@ export function createCommunityPrototypeClient() {
   }
 
   return {
+    async locations() {
+      return [{ location_id: SAMPLE_LOCATION, location_name: 'สถานที่ค่ายตัวอย่าง' }];
+    },
     async list(locationId) {
       assertLocation(locationId);
       return records.map(row => ({ ...row }));
