@@ -21,6 +21,7 @@ export default function CommunityLocationPage({ client = communityClient, demo =
     event?.preventDefault();
     setError(''); setMessage('');
     if (!locationId.trim()) return setError('กรุณาระบุสถานที่ค่าย');
+    setRecords([]);
     setBusy(true);
     try {
       setRecords(await client.list(locationId.trim()));
@@ -50,6 +51,16 @@ export default function CommunityLocationPage({ client = communityClient, demo =
     } finally { setBusy(false); }
   }
 
+  // Prevent records or edit fields from a previously selected camp leaking into another view.
+  function changeLocation(event) {
+    setLocationId(event.target.value);
+    setRecords([]);
+    setEditingId('');
+    setFields(EMPTY);
+    setMessage('');
+    setError('');
+  }
+
   function edit(row) {
     setEditingId(row.community_id);
     setFields(Object.fromEntries(Object.keys(EMPTY).map(key => [key, row[key] ?? ''])));
@@ -64,7 +75,7 @@ export default function CommunityLocationPage({ client = communityClient, demo =
       <form onSubmit={load}>
         <label htmlFor="uc01-location">รหัสสถานที่ค่ายที่รับผิดชอบ</label>
         <input id="uc01-location" value={locationId}
-          onChange={event => setLocationId(event.target.value)} required />
+          onChange={changeLocation} disabled={busy} required />
         <button type="submit" disabled={busy}>แสดงข้อมูลชุมชน</button>
       </form>
       <form onSubmit={submit}>
