@@ -1,7 +1,7 @@
 # Tasks: UC-01 บันทึกข้อมูลสถานที่และชุมชน
 
 อ้างอิง: [spec.md](./spec.md) (Draft v2), [plan.md](./plan.md)
-สถานะ: Draft v1 — ยังไม่ Implement; เทคโนโลยีและคำถามเปิดยังต้องยืนยันกับทีม
+สถานะ: Draft v1 — มี Prototype/API และ scoped CI tests ผ่านแล้วใน Fork; งาน Integration, full tests และคำถามเปิดยังต้องตรวจยืนยันกับทีม
 
 ## งานที่ทำได้ทันที (ไม่พึ่งพา Task อื่น)
 
@@ -46,3 +46,10 @@
 | FR-01-01 ถึง FR-01-05 | T-01 ถึง T-05 |
 | AF-01-01 | T-03, T-05, T-06 |
 | QR-01, QR-02 | T-05, T-06 |
+
+## ความคืบหน้าใน Fork (11 พ.ย. 2026 — ยังไม่ใช่การอนุมัติจากทีม)
+
+- T-02/T-03/T-04: มี SQLite persistence, POST/PUT/GET communities และ GET `/api/locations/assigned` ที่กรองตามผู้ใช้ซึ่งผ่านการยืนยันตัวตน; ยังรอเชื่อม UC-09 และข้อมูล assignment จริง
+- T-05: มี React form สำหรับเลือกสถานที่ที่มอบหมาย บันทึก/แก้ไขชุมชน และแสดงข้อผิดพลาด; Demo Mode ใช้ข้อมูลจำลอง
+- T-06: CI [run 43025058889](https://github.com/670710751-Boonyai/padpadpad-swreqspec/actions/runs/43025058889) ทดสอบ Backend เฉพาะ UC-01/07 17 cases และ Offline Demo 11 cases ผ่าน พร้อม Build ผ่าน; **ยังไม่มี full repo pytest, browser E2E, performance 2 วินาที และ usability verification**
+- คงรายการ checkbox เดิมไว้เพื่อรอคนตรวจ end-to-end ตามเกณฑ์ “เสร็จเมื่อ”; ดูช่องโหว่ใน [rtm.md](./rtm.md)
